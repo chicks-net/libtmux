@@ -1,3 +1,4 @@
 Makefile.PL
 MANIFEST
 lib/Term/Multiplexed.pm
+LICENSE
