@@ -1,7 +1,7 @@
 libtmux
 =======
 
-A library to wrap tmux with expect-like behaviour.
+A library for interacting with tmux
 
 
 TECH TODO
