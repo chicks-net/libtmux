@@ -3,6 +3,7 @@ package Term::TmuxExpect;
 use strict;
 use warnings;
 use Term::Multiplexed qw(multiplexed attached multiplexer);
+use Data::Dumper; # just for debugging
 
 use vars qw($VERSION @EXPORT @EXPORT_OK @ISA);
 $VERSION = "0.0.1";
@@ -36,25 +37,55 @@ sub new {
 
 	print "Target is $self->{_target} ";
 	if ($self->{_create}) {
-		print "with CREATE";
+		print "with CREATE\n";
 		die "unimplemented: create tab";
 	} else {
-		print "which should already exist";
-		$self->sendln("# tmux_expect probe");
+		print "which should already exist\n";
+		$self->sendln("# tmux_expect A probe");
+		$self->sendln("# tmux_expect B probe");
 		$self->timeout('10s');
 #		$self->expect_last('probe$');
 #		$self->expect_last("^chicks");
 	}
-	print "\n";
 
 	# get line count
 	$self->sendln("tput lines");
 	my $row_count = $self->read_prev();
-	die "bad row_count '$row_count'" unelss $row_count =~/^\d+$/;
+	die "bad row_count '$row_count'" unless $row_count =~ /^\d+$/;
 	$self->{_rows} = $row_count;
+	print Dumper($self);
 
 	# boilerplate
 	return $self;
+}
+
+sub read_prev {
+	my ($obj) = @_;
+	die "not a ref" unless ref $obj;
+	my $target = $obj->{_target};
+
+	# sleep
+	print "sleeping 1s to let the shell catch up\n";
+	sleep(1);
+
+	my $cmd = "tmux capture-pane -t '$target' ; tmux save-buffer -";
+	print "running $cmd\n";
+	my $out = `$cmd`;
+	my $chars = length($out);
+	print "got $chars from $cmd\n";
+	my @lines = split(/\n/,$out);
+	my $last = pop @lines;
+	my $prev = pop @lines;
+	print "returning $prev\n";
+	return $prev;
+}
+
+sub read_last {
+	die "unimplemented read_last()";
+}
+
+sub read_all {
+	die "unimplemented read_all()";
 }
 
 sub timeout {
@@ -76,7 +107,7 @@ sub sendkeys {
 
 	my $send_string = join (" ",@send_strings);
 	my $cmd = "tmux send-keys -t '$target' $send_string";
-	print "running $cmd\n";
+#	print "running $cmd\n";
 	system($cmd);
 }
 
@@ -100,7 +131,7 @@ sub expect {
 	my ($target,$match) = @_;
 	die "not in tmux" unless in_tmux();
 	# 18 * reading from tmux is done with  ` tmux capture-pane ; tmux save-buffer - `
-	die "unimplemented";
+	die "unimplemented expect()";
 }
 
 sub in_tmux {
