@@ -15,14 +15,16 @@ foreach my $target (@servers) {
 	print "$target:\n";
 	my $server = $target;
 	
-	# TODO: Spawn window
-	my $window_name = "${server}_e3a8"; # TODO: randomizer
+	# Spawn window
+	my $random = int(rand(1000));
+	my $window_name = "${server}_${random}";
 	system("tmux new-window -n $window_name");
+	sleep 1; # TODO: sleep less?
 
 	my $remote = new Term::TmuxExpect($window_name);
 
-        $remote->sendln('echo something');
-	$remote->expect_last('^chicks.*[$}$'); # at a prompt
+#        $remote->sendln('echo something');
+#	$remote->expect_last('^chicks.*[$}$'); # at a prompt
 
 	# login
 #	$remote->sendln("ssh $server");
