@@ -6,7 +6,7 @@ use Term::Multiplexed qw(multiplexed attached multiplexer);
 use Data::Dumper; # just for debugging
 
 use vars qw($VERSION @EXPORT @EXPORT_OK @ISA);
-$VERSION = "0.0.1";
+$VERSION = "0.3";
 
 BEGIN {
     require Exporter;
