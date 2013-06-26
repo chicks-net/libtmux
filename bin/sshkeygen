@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use lib '/home/chicks/Documents/git/libtmux/lib';
-use Term::TmuxExpect qw(sendln sendkeys expect expectlast);
+use Term::TmuxExpect;
 
 my $password = `cat ~/.creds`;
 chomp($password);
