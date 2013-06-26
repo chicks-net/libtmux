@@ -45,6 +45,8 @@ sub sendln {
 
 sub expect {
 	die "not in tmux" unless in_tmux();
+	# 18 * reading from tmux is done with  ` tmux capture-pane ; tmux save-buffer - `
+	die "unimplemented";
 }
 
 sub in_tmux {
@@ -72,9 +74,13 @@ available without effort by building on tmux
 
 =head2 EXPORTS
 
-=head3 send
+=head3 sendkeys
 
-Write commands into a tmux window.
+Write anything into a tmux window.  It does not quote anything so you may need to.
+
+=head3 sendln
+
+Write a command into a tmux window.  sendln quotes the argument.  It only looks at one command.  And it appends the newline.
 
 =head3 expect
 
@@ -82,7 +88,7 @@ Read a window until one of several things happens or you time out.
 
 =head1 SEE ALSO
 
-Manpages: screen(1) tmux(1)
+Manpages: screen(1) tmux(1) expect(1)
 
 =head1 AUTHOR
 
