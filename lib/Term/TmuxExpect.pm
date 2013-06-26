@@ -59,7 +59,7 @@ sub new {
 	my $row_count = $self->read_prev();
 	die "bad row_count '$row_count'" unless $row_count =~ /^\d+$/;
 	$self->{_rows} = $row_count;
-	print Dumper($self);
+#	print Dumper($self);
 
 	# boilerplate
 	return $self;
