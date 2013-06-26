@@ -72,14 +72,14 @@ sub read_prev {
 sub read_last {
 	my ($obj) = @_;
 	die "not a ref" unless ref $obj;
-	my @lines = $obj->read_all(); # TODO: efficiency (use line count)
+	my @lines = $obj->read_all(1);
 	my $last = pop @lines;
-#	print "returning $last\n";
+	print "returning $last\n";
 	return $last;
 }
 
 sub read_all {
-	my ($obj) = @_;
+	my ($obj,$lines_desired) = @_;
 	die "not a ref" unless ref $obj;
 	my $target = $obj->{_target};
 
@@ -88,6 +88,11 @@ sub read_all {
 	sleep(1);
 
 	my $cmd = "tmux capture-pane -t '$target' ; tmux save-buffer -";
+	if (defined $lines_desired) {
+		my $actual_rows = $obj->{_rows};
+		my $start_line = $actual_rows - $lines_desired;
+		$cmd = "tmux capture-pane -t '$target' -S $start_line ; tmux save-buffer -";
+	}
 #	print "running $cmd\n";
 	my $out = `$cmd`;
 	my $chars = length($out);
@@ -131,16 +136,22 @@ sub sendln {
 sub expect_last {
 	my ($obj,$match,$timeout) = @_;
 	die "not a ref" unless ref $obj;
-	my $target = $obj->{_target};
-	# 18 * reading from tmux is done with  ` tmux capture-pane ; tmux save-buffer - `
+
+	my $success = 0;
+	my $last_line = $obj->read_last();
+	if ($last_line =~ /$match/) {
+		print "matched '$match' in expect_last()\n";
+		$success = 1;
+	} else {
+		print "NO match for '$match' in expect_last()\n";
+	}
 	die "unimplemented TIMEOUT";
 }
 
 sub expect {
-	my ($target,$match) = @_;
-	die "not in tmux" unless in_tmux();
-	# 18 * reading from tmux is done with  ` tmux capture-pane ; tmux save-buffer - `
-	die "unimplemented expect()";
+	my ($obj,$match,$timeout) = @_;
+	die "not a ref" unless ref $obj;
+	die "unimplemented expect()"; # TODO: implement something
 }
 
 sub in_tmux {
