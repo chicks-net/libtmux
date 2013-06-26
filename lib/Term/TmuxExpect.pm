@@ -23,6 +23,17 @@ BEGIN {
 	}
 }
 
+sub new {
+	my $class = shift;
+	my $self = {
+		_target       => shift,
+	};
+	# Print all the values just for clarification.
+	print "Target is $self->{_target}\n";
+	bless $self, $class;
+	return $self;
+}
+
 sub sendkeys {
 	my ($target,@send_strings) = @_;
 	die "not in tmux" unless in_tmux();
@@ -42,12 +53,14 @@ sub sendln {
 }
 
 sub expect {
+	my ($target,$match) = @_;
 	die "not in tmux" unless in_tmux();
 	# 18 * reading from tmux is done with  ` tmux capture-pane ; tmux save-buffer - `
 	die "unimplemented";
 }
 
 sub expectlast {
+	my ($target,$match) = @_;
 	die "not in tmux" unless in_tmux();
 	# 18 * reading from tmux is done with  ` tmux capture-pane ; tmux save-buffer - `
 	die "unimplemented";
