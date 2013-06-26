@@ -163,6 +163,7 @@ sub expect_prev {
 	while ($time_running < $timeout) {
 		$tries++;
 		my $last_line = $obj->read_prev();
+		die unless defined $last_line;
 		if ($last_line =~ /$match/) {
 			$success = 1;
 			last;
@@ -194,6 +195,7 @@ sub expect_last {
 	while ($time_running < $timeout) {
 		$tries++;
 		my $last_line = $obj->read_last();
+		die unless defined $last_line;
 		if ($last_line =~ /$match/) {
 			$success = 1;
 			last;
