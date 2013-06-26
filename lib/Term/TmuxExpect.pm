@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Term::Multiplexed qw(multiplexed attached multiplexer);
 use Data::Dumper; # just for debugging
+use Time::HiRes qw(gettimeofday tv_interval);
 
 use vars qw($VERSION @EXPORT @EXPORT_OK @ISA);
 $VERSION = "0.3";
@@ -108,20 +109,18 @@ sub timeout {
 	die "bad timeout '$timeout'" unless $timeout =~ /^(\d+)(s|ms|us)$/;
 	my $size = $1;
 	my $units = $2;
-	my $millis = 1; # default timeout!
+	my $micros = 1; # default timeout!
 	if ($units eq 's') {
-		$millis = $size * 1000;
+		$micros = $size * 1000 * 1000;
 	} elsif ($units eq 'ms') {
-		$millis = $size;
+		$micros = $size * 1000;
 	} elsif ($units eq 'us') {
-		# silly humans
-		$millis = $size / 1000;
-		$millis = 1 if $millis < 1;
+		$micros = $size ;
 	} else {
 		die "units '$units' unrecognized";
 	}
 
-	$obj->{_timeout} = $millis;
+	$obj->{_timeout} = $micros;
 	return $timeout;
 }
 
@@ -148,18 +147,34 @@ sub sendln {
 }
 
 sub expect_last {
-	my ($obj,$match,$timeout) = @_;
+	my $obj = shift;
 	die "not a ref" unless ref $obj;
+	my $match = shift;
+	my $timeout = shift || $obj->{_timeout};
 
+	my $start = [gettimeofday()];
 	my $success = 0;
-	my $last_line = $obj->read_last();
-	if ($last_line =~ /$match/) {
-		print "matched '$match' in expect_last()\n";
-		$success = 1;
-	} else {
-		print "NO match for '$match' in expect_last()\n";
+	my $tries = 0;
+	my $time_running = tv_interval ( $start, [gettimeofday] );
+	while ($time_running < $timeout) {
+		$tries++;
+		my $last_line = $obj->read_last();
+		if ($last_line =~ /$match/) {
+			$success = 1;
+			last;
+		}
+		$time_running = tv_interval ( $start, [gettimeofday] );
+		print "$time_running\n";
 	}
-	die "unimplemented TIMEOUT";
+	if ($success) {
+		print "matched '$match' in expect_last() with $tries tries\n";
+		return 1;
+	}
+	unless ($success) {
+		print "NO match for '$match' in expect_last()\n";
+		return 0;
+	}
+	die "never";
 }
 
 sub expect {
