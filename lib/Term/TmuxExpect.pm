@@ -1,4 +1,4 @@
-package Term::TmuxExpect
+package Term::TmuxExpect;
 
 use strict;
 use warnings;
@@ -11,20 +11,44 @@ BEGIN {
     require Exporter;
     @ISA = qw(Exporter);
     @EXPORT = ();
-    @EXPORT_OK = qw(send expect);
+    @EXPORT_OK = qw(sendkeys sendln expect);
 }
 
 BEGIN {
 	if (multiplexed) {
-		say "Using " . multiplexer . " as terminal multiplexer";
-		say "Currently " . (attached ? : "not ") . "attached.";
+		print "FYI: Using " . multiplexer . " as terminal multiplexer ";
+		print "and currently " . (attached() ? '' : "not ") . "attached.\n";
+	} else {
+		print "not multiplexed, this module won't do you much good outside fo tmux\n";
 	}
 }
 
-sub send {
+# tmux send-keys -t $TARGET 'echo foo' C-m
+
+sub sendkeys {
+	my ($target,@send_strings) = @_;
+	die "not in tmux" unless in_tmux();
+	die "no target" unless length $target;
+	die "no send_string" unless length $target;
+
+	my $send_string = join (" ",@send_strings);
+	my $cmd = "tmux send-keys -t '$target' $send_string";
+	print "running $cmd\n";
+	system($cmd);
+}
+
+sub sendln {
+	my ($target,$send_string) = @_;
+	print "sending '$send_string' to '$target'\n";
+	sendkeys($target,"'$send_string' C-m");
 }
 
 sub expect {
+	die "not in tmux" unless in_tmux();
+}
+
+sub in_tmux {
+	return 1 if multiplexed and multiplexer eq 'tmux' and attached;
 }
 
 1;
