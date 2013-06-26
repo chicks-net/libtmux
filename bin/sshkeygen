@@ -14,10 +14,11 @@ my @servers = @ARGV;
 foreach my $target (@servers) {
 	print "$target:\n";
 	my $server = $target;
+	$target =~ s/[.]/_/g;
 	
 	# Spawn window
 	my $random = int(rand(1000));
-	my $window_name = "${server}_${random}";
+	my $window_name = "${target}_${random}";
 	system("tmux new-window -n $window_name");
 	sleep 1; # TODO: sleep less?
 
