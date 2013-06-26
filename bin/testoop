@@ -7,3 +7,6 @@ use Term::TmuxExpect qw(sendln sendkeys expect expectlast);
 
 my $boo = new Term::TmuxExpect('boo');
 
+$boo->sendln('echo something');
+$boo->expect_last(/^chicks/);
+

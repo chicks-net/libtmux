@@ -26,19 +26,53 @@ BEGIN {
 sub new {
 	my $class = shift;
 	my $self = {
-		_target       => shift,
+		_target		=> shift,
+		_create		=> shift || 0,
 	};
-	# Print all the values just for clarification.
-	print "Target is $self->{_target}\n";
+
+	die "not in tmux" unless in_tmux();
+
 	bless $self, $class;
+
+	print "Target is $self->{_target} ";
+	if ($self->{_create}) {
+		print "with CREATE";
+		die "unimplemented: create tab";
+	} else {
+		print "which should already exist";
+		$self->sendln("# tmux_expect probe");
+		$self->timeout('10s');
+#		$self->expect_last('probe$');
+#		$self->expect_last("^chicks");
+	}
+	print "\n";
+
+	# get line count
+	$self->sendln("tput lines");
+	my $row_count = $self->read_prev();
+	die "bad row_count '$row_count'" unelss $row_count =~/^\d+$/;
+	$self->{_rows} = $row_count;
+
+	# boilerplate
 	return $self;
 }
 
+sub timeout {
+	my ($obj,$timeout) = @_;
+	die "not a ref" unless ref $obj;
+	# TODO: validation
+	# TODO: translate into millis
+	$obj->{_timeout} = $timeout;
+	return $timeout;
+}
+
 sub sendkeys {
-	my ($target,@send_strings) = @_;
+	my ($obj,@send_strings) = @_;
+	die "not a ref" unless ref $obj;
+	my $target = $obj->{_target};
 	die "not in tmux" unless in_tmux();
 	die "no target" unless length $target;
-	die "no send_string" unless length $target;
+	die "nothing to send" unless scalar @send_strings;
 
 	my $send_string = join (" ",@send_strings);
 	my $cmd = "tmux send-keys -t '$target' $send_string";
@@ -47,19 +81,22 @@ sub sendkeys {
 }
 
 sub sendln {
-	my ($target,$send_string) = @_;
+	my ($obj,$send_string) = @_;
+	die "not a ref" unless ref $obj;
+	my $target = $obj->{_target};
 	print "sending '$send_string' to '$target'\n";
-	sendkeys($target,"'$send_string' C-m");
+	$obj->sendkeys("'$send_string' C-m");
+}
+
+sub expect_last {
+	my ($obj,$match,$timeout) = @_;
+	die "not a ref" unless ref $obj;
+	my $target = $obj->{_target};
+	# 18 * reading from tmux is done with  ` tmux capture-pane ; tmux save-buffer - `
+	die "unimplemented TIMEOUT";
 }
 
 sub expect {
-	my ($target,$match) = @_;
-	die "not in tmux" unless in_tmux();
-	# 18 * reading from tmux is done with  ` tmux capture-pane ; tmux save-buffer - `
-	die "unimplemented";
-}
-
-sub expectlast {
 	my ($target,$match) = @_;
 	die "not in tmux" unless in_tmux();
 	# 18 * reading from tmux is done with  ` tmux capture-pane ; tmux save-buffer - `
