@@ -2,9 +2,10 @@
 
 use strict;
 use warnings;
-use lib '/home/chicks/Documents/git/libtmux/lib';
+use lib '/home/chicks/Documents/git/libtmux/lib'; # TODO: remove hack
 use Term::TmuxExpect;
 
+# slurp password out of unversioned file
 my $password = `cat ~/.creds`;
 chomp($password);
 
@@ -12,23 +13,33 @@ my @servers = @ARGV;
 
 foreach my $target (@servers) {
 	print "$target:\n";
+	my $server = $target;
+	
+	# TODO: Spawn window
+	my $window_name = "${server}_e3a8"; # TODO: randomizer
+	system("tmux new-window -n $window_name");
 
-        sendln($target,'echo something');
-	expectlast($target, qr/^chicks/, 10); # at a prompt
+	my $remote = new Term::TmuxExpect($window_name);
+
+        $remote->sendln('echo something');
+	$remote->expect_last('^chicks.*[$}$'); # at a prompt
 
 	# login
-#	sendln($target,"ssh $target");
+#	$remote->sendln("ssh $server");
 #        sleep 2;
-        sendln($target,'yes'); # for ssh host key, TODO: check if ssh is prompting
-        sleep 3;
-#        sendln($target,$password);
+#        $remote->sendln('yes'); # for ssh host key,
+	# TODO: check if ssh is prompting
+#        sleep 3;
+#        $remote->sendln($password);
 #        sleep 8;
 
 	# do something
-#	sendln($target,'mkdir .ssh; chmod 700 .ssh; cd .ssh;  wget https://raw.github.com/chicks-net/chicks-home/master/.ssh/authorized_keys; chmod 600 authorized_keys; ls -al; cd ..');
+#	$remote->sendln('mkdir .ssh; chmod 700 .ssh; cd .ssh;  wget https://raw.github.com/chicks-net/chicks-home/master/.ssh/authorized_keys; chmod 600 authorized_keys; ls -al; cd ..');
 
         # logout
-        sleep 1;
-#        sendln('exit');
+#        sleep 1;
+#        $remote->sendln('exit');
         sleep 1;
 }
+
+
