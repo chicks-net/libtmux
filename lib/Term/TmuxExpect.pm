@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Term::Multiplexed qw(multiplexed attached multiplexer);
 use Data::Dumper; # just for debugging
-use Time::HiRes qw(gettimeofday tv_interval);
+use Time::HiRes qw(gettimeofday tv_interval usleep);
 
 use vars qw($VERSION @EXPORT @EXPORT_OK @ISA);
 $VERSION = "0.3";
@@ -44,13 +44,18 @@ sub new {
 		print "which should already exist\n";
 		$self->sendln("# tmux_expect A probe");
 		$self->sendln("# tmux_expect B probe");
+		usleep(50);
 		$self->timeout('10s');
-#		$self->expect_last('probe$');
+		die "probe fail" unless $self->expect_prev('B probe$');
 #		$self->expect_last("^chicks");
 	}
 
 	# get line count
 	$self->sendln("tput lines");
+	$self->timeout('3s');
+	print "sleeping 1s to let the shell catch up\n";
+	sleep(1);
+	die "not at a propmt" unless $self->expect_last('[$#]$');
 	my $row_count = $self->read_prev();
 	die "bad row_count '$row_count'" unless $row_count =~ /^\d+$/;
 	$self->{_rows} = $row_count;
@@ -75,7 +80,7 @@ sub read_last {
 	die "not a ref" unless ref $obj;
 	my @lines = $obj->read_all(1);
 	my $last = pop @lines;
-	print "returning $last\n";
+#	print "returning $last\n";
 	return $last;
 }
 
@@ -84,15 +89,14 @@ sub read_all {
 	die "not a ref" unless ref $obj;
 	my $target = $obj->{_target};
 
-	# sleep
-	print "sleeping 1s to let the shell catch up\n";
-	sleep(1);
-
+	usleep(100); # give things a chance to catch up
 	my $cmd = "tmux capture-pane -t '$target' ; tmux save-buffer -";
 	if (defined $lines_desired) {
 		my $actual_rows = $obj->{_rows};
-		my $start_line = $actual_rows - $lines_desired;
-		$cmd = "tmux capture-pane -t '$target' -S $start_line ; tmux save-buffer -";
+		if (defined $actual_rows) {
+			my $start_line = $actual_rows - $lines_desired;
+			$cmd = "tmux capture-pane -t '$target' -S $start_line ; tmux save-buffer -";
+		}
 	}
 #	print "running $cmd\n";
 	my $out = `$cmd`;
@@ -109,18 +113,18 @@ sub timeout {
 	die "bad timeout '$timeout'" unless $timeout =~ /^(\d+)(s|ms|us)$/;
 	my $size = $1;
 	my $units = $2;
-	my $micros = 1; # default timeout!
+	my $seconds = 1; # default timeout!
 	if ($units eq 's') {
-		$micros = $size * 1000 * 1000;
+		$seconds = $size;
 	} elsif ($units eq 'ms') {
-		$micros = $size * 1000;
+		$seconds = $size / 1000;
 	} elsif ($units eq 'us') {
-		$micros = $size ;
+		$seconds = $size / 1000 / 1000;
 	} else {
 		die "units '$units' unrecognized";
 	}
 
-	$obj->{_timeout} = $micros;
+	$obj->{_timeout} = $seconds;
 	return $timeout;
 }
 
@@ -146,6 +150,37 @@ sub sendln {
 	$obj->sendkeys("'$send_string' C-m");
 }
 
+sub expect_prev {
+	my $obj = shift;
+	die "not a ref" unless ref $obj;
+	my $match = shift;
+	my $timeout = shift || $obj->{_timeout};
+
+	my $start = [gettimeofday()];
+	my $success = 0;
+	my $tries = 0;
+	my $time_running = tv_interval ( $start, [gettimeofday] );
+	while ($time_running < $timeout) {
+		$tries++;
+		my $last_line = $obj->read_prev();
+		if ($last_line =~ /$match/) {
+			$success = 1;
+			last;
+		}
+		$time_running = tv_interval ( $start, [gettimeofday] );
+#		print "$time_running\n";
+	}
+	if ($success) {
+		print "matched '$match' in expect_last() with $tries tries after ${time_running}s\n";
+		return 1;
+	}
+	unless ($success) {
+		print "NO match for '$match' in expect_last() with $tries tries after ${time_running}s\n";
+		return 0;
+	}
+	die "never";
+}
+
 sub expect_last {
 	my $obj = shift;
 	die "not a ref" unless ref $obj;
@@ -164,14 +199,14 @@ sub expect_last {
 			last;
 		}
 		$time_running = tv_interval ( $start, [gettimeofday] );
-		print "$time_running\n";
+#		print "$time_running\n";
 	}
 	if ($success) {
-		print "matched '$match' in expect_last() with $tries tries\n";
+		print "matched '$match' in expect_last() with $tries tries after ${time_running}s\n";
 		return 1;
 	}
 	unless ($success) {
-		print "NO match for '$match' in expect_last()\n";
+		print "NO match for '$match' in expect_last() with $tries tries after ${time_running}s\n";
 		return 0;
 	}
 	die "never";
