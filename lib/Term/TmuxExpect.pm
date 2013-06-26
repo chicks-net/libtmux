@@ -68,7 +68,7 @@ sub new {
 sub read_prev {
 	my ($obj) = @_;
 	die "not a ref" unless ref $obj;
-	my @lines = $obj->read_all(); # TODO: efficiency (use line count)
+	my @lines = $obj->read_all(2);
 	my $last = pop @lines;
 	my $prev = pop @lines;
 #	print "returning $prev\n";
@@ -88,23 +88,36 @@ sub read_all {
 	my ($obj,$lines_desired) = @_;
 	die "not a ref" unless ref $obj;
 	my $target = $obj->{_target};
+	my $actual_rows = $obj->{_rows};
 
 	usleep(100); # give things a chance to catch up
 	my $cmd = "tmux capture-pane -t '$target' ; tmux save-buffer -";
-	if (defined $lines_desired) {
-		my $actual_rows = $obj->{_rows};
-		if (defined $actual_rows) {
-			my $start_line = $actual_rows - $lines_desired;
+	if (defined $lines_desired and defined $actual_rows) {
+		my $got_something = 0;
+		my $start_line = $actual_rows - $lines_desired;
+		until ($got_something) {
+			$start_line -= 10; # go further back
+			print "start_line=$start_line\n";
 			$cmd = "tmux capture-pane -t '$target' -S $start_line ; tmux save-buffer -";
+			my $out = `$cmd`;
+			my $chars = length($out);
+#			print "got $chars from $cmd\n";
+			my @lines = split(/\n/,$out);
+
+			$got_something = grep { length($_) } @lines;
+#			print "exiting loop with got_something=$got_something\n";
+			return @lines;
 		}
+	} else {
+		# really all
+#		print "running $cmd\n";
+		my $out = `$cmd`;
+		my $chars = length($out);
+#		print "got $chars from $cmd\n";
+		my @lines = split(/\n/,$out);
+#		print "returning " . scalar @lines . " lines\n";
+		return @lines;
 	}
-#	print "running $cmd\n";
-	my $out = `$cmd`;
-	my $chars = length($out);
-#	print "got $chars from $cmd\n";
-	my @lines = split(/\n/,$out);
-#	print "returning " . scalar @lines . " lines\n";
-	return @lines;
 }
 
 sub timeout {
@@ -209,6 +222,8 @@ sub expect_last {
 	}
 	unless ($success) {
 		print "NO match for '$match' in expect_last() with $tries tries after ${time_running}s\n";
+		print join("\n",$obj->read_all(3));
+		print "\n\n";
 		return 0;
 	}
 	die "never";

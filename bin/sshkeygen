@@ -32,7 +32,7 @@ foreach my $target (@servers) {
 	sleep 1;
 	
 	#$remote->timeout('20s');
-	$remote->expect_last('^chicks.*[$]$'); # at a prompt
+	$remote->expect_last('^chicks'); # at a prompt
 #	$remote->expect_last("^chicks[\@]$server.*[\$]\$"); # at a prompt on the remote server
 	# TODO: check if ssh is prompting
 #        $remote->sendln('yes'); # for ssh host key,
