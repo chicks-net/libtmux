@@ -1,0 +1,32 @@
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+use lib '/home/chicks/Documents/git/libtmux/lib';
+use Term::TmuxExpect qw(sendln sendkeys expect);
+
+my $password = `cat ~/.creds`;
+chomp($password);
+
+my @servers = @ARGV;
+
+foreach my $target (@servers) {
+	print "$target:\n"
+
+	# login
+	sendln($target,"ssh $target");
+        sleep 2;
+        sendln($target,'yes'); # for ssh host key, TODO: check if ssh is prompting
+        sleep 3;
+        sendln($target,$password);
+        sleep 8;
+
+	# do something
+	sendln($target,'mkdir .ssh; chmod 700 .ssh; cd .ssh;  wget https://raw.github.com/chicks-net/chicks-home/master/.ssh/authorized_keys; chmod 600 authorized_keys; ls -al; cd ..');
+
+
+        # logout
+        sleep 1;
+        sendln('exit');
+        sleep 1;
+}
