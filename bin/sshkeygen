@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+use diagnostics;
 use lib '/home/chicks/Documents/git/libtmux/lib'; # TODO: remove hack
 use Term::TmuxExpect;
 
@@ -19,19 +20,22 @@ foreach my $target (@servers) {
 	# Spawn window
 	my $random = int(rand(1000));
 	my $window_name = "${target}_${random}";
-	system("tmux new-window -n $window_name");
+	system("tmux new-window -d -n $window_name");
 	sleep 1; # TODO: sleep less?
 
 	my $remote = new Term::TmuxExpect($window_name);
 
-#        $remote->sendln('echo something');
-#	$remote->expect_last('^chicks.*[$}$'); # at a prompt
+#	$remote->expect_last('^chicks.*[$]$'); # at a prompt
 
 	# login
-#	$remote->sendln("ssh $server");
-#        sleep 2;
-#        $remote->sendln('yes'); # for ssh host key,
+	$remote->sendln("ssh $server");
+	sleep 1;
+	
+	#$remote->timeout('20s');
+	$remote->expect_last('^chicks.*[$]$'); # at a prompt
+#	$remote->expect_last("^chicks[\@]$server.*[\$]\$"); # at a prompt on the remote server
 	# TODO: check if ssh is prompting
+#        $remote->sendln('yes'); # for ssh host key,
 #        sleep 3;
 #        $remote->sendln($password);
 #        sleep 8;
