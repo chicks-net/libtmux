@@ -13,6 +13,7 @@ my @servers = @ARGV;
 foreach my $target (@servers) {
 	print "$target:\n";
 
+        sendln($target,'echo something');
 	expectlast($target, qr/^chicks/, 10); # at a prompt
 
 	# login
@@ -25,7 +26,6 @@ foreach my $target (@servers) {
 
 	# do something
 #	sendln($target,'mkdir .ssh; chmod 700 .ssh; cd .ssh;  wget https://raw.github.com/chicks-net/chicks-home/master/.ssh/authorized_keys; chmod 600 authorized_keys; ls -al; cd ..');
-        sendln('echo something');
 
         # logout
         sleep 1;
