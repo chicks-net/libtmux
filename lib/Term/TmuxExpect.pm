@@ -105,9 +105,23 @@ sub read_all {
 sub timeout {
 	my ($obj,$timeout) = @_;
 	die "not a ref" unless ref $obj;
-	# TODO: validation
-	# TODO: translate into millis
-	$obj->{_timeout} = $timeout;
+	die "bad timeout '$timeout'" unless $timeout =~ /^(\d+)(s|ms|us)/;
+	my $size = $1;
+	my $units = $2;
+	my $millis = 1; # default timeout!
+	if ($units eq 's') {
+		$millis = $size * 1000;
+	} elsif ($units eq 'ms') {
+		$millis = $size;
+	} elsif ($units eq 'us') {
+		# silly humans
+		$millis = $size / 1000;
+		$millis = 1 if $millis < 1;
+	} else {
+		die "units '$units' unrecognized";
+	}
+
+	$obj->{_timeout} = $millis;
 	return $timeout;
 }
 
