@@ -13,7 +13,7 @@ BEGIN {
     require Exporter;
     @ISA = qw(Exporter);
     @EXPORT = ();
-    @EXPORT_OK = qw(sendkeys sendln expect expectlast);
+    @EXPORT_OK = ();
 }
 
 BEGIN {
@@ -232,7 +232,16 @@ Term::TmuxExpect - expect for tmux
 
 =head1 SYNOPSIS
 
-  use Term::TmuxExpect qw(send receive);
+   use Term::TmuxExpect;
+
+   # use it with an existing pane
+   my $existing_pane_name = 'boo';
+   my $boo = new Term::TmuxExpect($existing_pane_name);
+
+   $boo->sendln('echo test from the actual script');
+   $boo->expect_prev('test from the actual script$') or die "no echo";
+   $boo->expect_last('^chicks') or die "no chicks";
+
 
 =head1 DESCRIPTION
 
@@ -241,19 +250,47 @@ tmux provides a good environment for doing this automation because you can readi
 the automated processes or merely watch them as they work.  Many other features such as output logging are 
 available without effort by building on tmux
 
-=head2 EXPORTS
+=head2 METHODS
 
-=head3 sendkeys
+=head3 new
 
-Write anything into a tmux window.  It does not quote anything so you may need to.
+Create a new object.  Call with an argument of the pane name.  It doesn't handle creating new pane's yet.
+
+=head3 timeout
+
+Set the timeout for expect operations.  The format of the argument is digits followed by 's' for seconds, 'ms' for millisecons' and 'us' for microseconds.  So '5s', '10ms', and '100us' would be valid values.  Naturally '10s' equals '10000ms' equals '10000000us'.
+
+=head3 in_tmux
+
+Are we in tmux and actually attached?  Othwerise you are out of luck.
 
 =head3 sendln
 
-Write a command into a tmux window.  sendln quotes the argument.  It only looks at one command.  And it appends the newline.
+Write a command into a tmux pane.  sendln quotes the argument.  It only looks at one command.  And it appends the newline.
+
+=head3 sendkeys
+
+Write anything inta a tmux pane.  Like sendlin(() without the implicit newline.
+
+=head3 expect_prev
+
+Check a pane until the next to last line matches or you time out.
+
+=head3 expect_last
+
+Check a pane until the last line matches or you time out.
 
 =head3 expect
 
-Read a window until one of several things happens or you time out.
+Read a window until one of several things happens or you time out.  UNIMPLEMENTED.
+
+=head3 read_last
+
+Get the last line from the pane.
+
+=head3 read_prev
+
+Get the next to last line -- as in 'previous' -- in the pane.
 
 =head1 SEE ALSO
 
