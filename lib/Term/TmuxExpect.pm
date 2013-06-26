@@ -105,7 +105,7 @@ sub read_all {
 sub timeout {
 	my ($obj,$timeout) = @_;
 	die "not a ref" unless ref $obj;
-	die "bad timeout '$timeout'" unless $timeout =~ /^(\d+)(s|ms|us)/;
+	die "bad timeout '$timeout'" unless $timeout =~ /^(\d+)(s|ms|us)$/;
 	my $size = $1;
 	my $units = $2;
 	my $millis = 1; # default timeout!
