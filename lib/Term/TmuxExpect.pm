@@ -11,7 +11,7 @@ BEGIN {
     require Exporter;
     @ISA = qw(Exporter);
     @EXPORT = ();
-    @EXPORT_OK = qw(sendkeys sendln expect);
+    @EXPORT_OK = qw(sendkeys sendln expect expectlast);
 }
 
 BEGIN {
@@ -22,8 +22,6 @@ BEGIN {
 		print "not multiplexed, this module won't do you much good outside fo tmux\n";
 	}
 }
-
-# tmux send-keys -t $TARGET 'echo foo' C-m
 
 sub sendkeys {
 	my ($target,@send_strings) = @_;
@@ -44,6 +42,12 @@ sub sendln {
 }
 
 sub expect {
+	die "not in tmux" unless in_tmux();
+	# 18 * reading from tmux is done with  ` tmux capture-pane ; tmux save-buffer - `
+	die "unimplemented";
+}
+
+sub expectlast {
 	die "not in tmux" unless in_tmux();
 	# 18 * reading from tmux is done with  ` tmux capture-pane ; tmux save-buffer - `
 	die "unimplemented";

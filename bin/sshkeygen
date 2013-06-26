@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use lib '/home/chicks/Documents/git/libtmux/lib';
-use Term::TmuxExpect qw(sendln sendkeys expect);
+use Term::TmuxExpect qw(sendln sendkeys expect expectlast);
 
 my $password = `cat ~/.creds`;
 chomp($password);
@@ -11,22 +11,24 @@ chomp($password);
 my @servers = @ARGV;
 
 foreach my $target (@servers) {
-	print "$target:\n"
+	print "$target:\n";
+
+	expectlast($target, qr/^chicks/, 10); # at a prompt
 
 	# login
-	sendln($target,"ssh $target");
-        sleep 2;
+#	sendln($target,"ssh $target");
+#        sleep 2;
         sendln($target,'yes'); # for ssh host key, TODO: check if ssh is prompting
         sleep 3;
-        sendln($target,$password);
-        sleep 8;
+#        sendln($target,$password);
+#        sleep 8;
 
 	# do something
-	sendln($target,'mkdir .ssh; chmod 700 .ssh; cd .ssh;  wget https://raw.github.com/chicks-net/chicks-home/master/.ssh/authorized_keys; chmod 600 authorized_keys; ls -al; cd ..');
-
+#	sendln($target,'mkdir .ssh; chmod 700 .ssh; cd .ssh;  wget https://raw.github.com/chicks-net/chicks-home/master/.ssh/authorized_keys; chmod 600 authorized_keys; ls -al; cd ..');
+        sendln('echo something');
 
         # logout
         sleep 1;
-        sendln('exit');
+#        sendln('exit');
         sleep 1;
 }
