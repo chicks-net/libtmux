@@ -8,6 +8,6 @@ use Term::TmuxExpect;
 my $boo = new Term::TmuxExpect('boo');
 
 $boo->sendln('echo test from the actual script');
-$boo->expect_prev('test from the actual script$');
-$boo->expect_last('^chicks');
+$boo->expect_prev('test from the actual script$') or die;
+$boo->expect_last('^chicks') or die;
 
