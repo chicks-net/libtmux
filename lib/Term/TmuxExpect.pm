@@ -62,6 +62,25 @@ sub new {
 sub read_prev {
 	my ($obj) = @_;
 	die "not a ref" unless ref $obj;
+	my @lines = $obj->read_all();
+	my $last = pop @lines;
+	my $prev = pop @lines;
+	print "returning $prev\n";
+	return $prev;
+}
+
+sub read_last {
+	my ($obj) = @_;
+	die "not a ref" unless ref $obj;
+	my @lines = $obj->read_all();
+	my $last = pop @lines;
+	print "returning $last\n";
+	return $last;
+}
+
+sub read_all {
+	my ($obj) = @_;
+	die "not a ref" unless ref $obj;
 	my $target = $obj->{_target};
 
 	# sleep
@@ -74,18 +93,8 @@ sub read_prev {
 	my $chars = length($out);
 	print "got $chars from $cmd\n";
 	my @lines = split(/\n/,$out);
-	my $last = pop @lines;
-	my $prev = pop @lines;
-	print "returning $prev\n";
-	return $prev;
-}
-
-sub read_last {
-	die "unimplemented read_last()";
-}
-
-sub read_all {
-	die "unimplemented read_all()";
+	print "returning " . scalar @lines . " lines\n";
+	return @lines;
 }
 
 sub timeout {
