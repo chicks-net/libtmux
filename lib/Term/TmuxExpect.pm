@@ -62,19 +62,19 @@ sub new {
 sub read_prev {
 	my ($obj) = @_;
 	die "not a ref" unless ref $obj;
-	my @lines = $obj->read_all();
+	my @lines = $obj->read_all(); # TODO: efficiency (use line count)
 	my $last = pop @lines;
 	my $prev = pop @lines;
-	print "returning $prev\n";
+#	print "returning $prev\n";
 	return $prev;
 }
 
 sub read_last {
 	my ($obj) = @_;
 	die "not a ref" unless ref $obj;
-	my @lines = $obj->read_all();
+	my @lines = $obj->read_all(); # TODO: efficiency (use line count)
 	my $last = pop @lines;
-	print "returning $last\n";
+#	print "returning $last\n";
 	return $last;
 }
 
@@ -88,12 +88,12 @@ sub read_all {
 	sleep(1);
 
 	my $cmd = "tmux capture-pane -t '$target' ; tmux save-buffer -";
-	print "running $cmd\n";
+#	print "running $cmd\n";
 	my $out = `$cmd`;
 	my $chars = length($out);
-	print "got $chars from $cmd\n";
+#	print "got $chars from $cmd\n";
 	my @lines = split(/\n/,$out);
-	print "returning " . scalar @lines . " lines\n";
+#	print "returning " . scalar @lines . " lines\n";
 	return @lines;
 }
 
