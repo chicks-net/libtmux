@@ -188,11 +188,11 @@ sub expect_prev {
 #		print "$time_running\n";
 	}
 	if ($success) {
-		print "matched '$match' in expect_last() with $tries tries after ${time_running}s\n";
+		print "matched '$match' in expect_last() with $tries tries after ". format_seconds($time_running) . "s\n";
 		return 1;
 	}
 	unless ($success) {
-		print "NO match for '$match' in expect_last() with $tries tries after ${time_running}s\n";
+		print "NO match for '$match' in expect_last() with $tries tries after ". format_seconds($time_running) . "s\n";
 		return 0;
 	}
 	die "never";
@@ -220,11 +220,11 @@ sub expect_last {
 #		print "$time_running\n";
 	}
 	if ($success) {
-		print "matched '$match' in expect_last() with $tries tries after ${time_running}s\n";
+		print "matched '$match' in expect_last() with $tries tries after ". format_seconds($time_running) . "s\n";
 		return 1;
 	}
 	unless ($success) {
-		print "NO match for '$match' in expect_last() with $tries tries after ${time_running}s\n";
+		print "NO match for '$match' in expect_last() with $tries tries after ". format_seconds($time_running) . "s\n";
 		print join("\n",$obj->read_all(3));
 		print "\n\n";
 		return 0;
@@ -236,6 +236,15 @@ sub expect {
 	my ($obj,$match,$timeout) = @_;
 	die "not a ref" unless ref $obj;
 	die "unimplemented expect()"; # TODO: implement something
+}
+
+#
+# utility functions
+#
+
+sub format_seconds {
+	my ($raw_seconds) = @_;
+	return sprintf("%.8f",$raw_seconds);
 }
 
 sub in_tmux {

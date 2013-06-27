@@ -32,22 +32,24 @@ foreach my $target (@servers) {
 	sleep 1;
 	
 	#$remote->timeout('20s');
-#	$remote->{debug} = 1; # get more logging output
 	$remote->expect_last('^chicks'); # at a prompt
 #	$remote->expect_last("^chicks[\@]$server.*[\$]\$"); # at a prompt on the remote server
 	# TODO: check if ssh is prompting
 #        $remote->sendln('yes'); # for ssh host key,
-#        sleep 3;
+	sleep 1;
 #        $remote->sendln($password);
-#        sleep 8;
+	sleep 1;
 
 	# do something
 #	$remote->sendln('mkdir .ssh; chmod 700 .ssh; cd .ssh;  wget https://raw.github.com/chicks-net/chicks-home/master/.ssh/authorized_keys; chmod 600 authorized_keys; ls -al; cd ..');
 
-        # logout
-#        sleep 1;
-#        $remote->sendln('exit');
-        sleep 1;
+	$remote->{debug} = 1; # get more logging output
+
+	# logout
+	$remote->sendln('exit');
+	sleep 1;
+	$remote->sendln('exit');
+	sleep 1;
 }
 
 
