@@ -32,6 +32,7 @@ foreach my $target (@servers) {
 	sleep 1;
 	
 	#$remote->timeout('20s');
+#	$remote->{debug} = 1; # get more logging output
 	$remote->expect_last('^chicks'); # at a prompt
 #	$remote->expect_last("^chicks[\@]$server.*[\$]\$"); # at a prompt on the remote server
 	# TODO: check if ssh is prompting

@@ -30,6 +30,7 @@ sub new {
 	my $self = {
 		_target		=> shift,
 		_create		=> shift || 0,
+		debug		=> 0,
 	};
 
 	die "not in tmux" unless in_tmux();
@@ -95,27 +96,29 @@ sub read_all {
 	if (defined $lines_desired and defined $actual_rows) {
 		my $got_something = 0;
 		my $start_line = $actual_rows - $lines_desired;
+		my @lines;
 		until ($got_something) {
 			$start_line -= 10; # go further back
-			print "start_line=$start_line\n";
+			print "start_line=$start_line\n" if $obj->{debug};
 			$cmd = "tmux capture-pane -t '$target' -S $start_line ; tmux save-buffer -";
 			my $out = `$cmd`;
 			my $chars = length($out);
 #			print "got $chars from $cmd\n";
-			my @lines = split(/\n/,$out);
+			@lines = split(/\n/,$out);
 
 			$got_something = grep { length($_) } @lines;
 #			print "exiting loop with got_something=$got_something\n";
-			return @lines;
 		}
+		print "returning " . scalar @lines . " lines\n" if $obj->{debug};
+		return @lines;
 	} else {
 		# really all
-#		print "running $cmd\n";
+		print "running $cmd\n" if $obj->{debug};
 		my $out = `$cmd`;
 		my $chars = length($out);
 #		print "got $chars from $cmd\n";
 		my @lines = split(/\n/,$out);
-#		print "returning " . scalar @lines . " lines\n";
+		print "returning " . scalar @lines . " lines\n" if $obj->{debug};
 		return @lines;
 	}
 }
@@ -151,7 +154,7 @@ sub sendkeys {
 
 	my $send_string = join (" ",@send_strings);
 	my $cmd = "tmux send-keys -t '$target' $send_string";
-#	print "running $cmd\n";
+#	print "running $cmd\n" if $obj->{debug};
 	system($cmd);
 }
 
@@ -159,7 +162,7 @@ sub sendln {
 	my ($obj,$send_string) = @_;
 	die "not a ref" unless ref $obj;
 	my $target = $obj->{_target};
-	print "sending '$send_string' to '$target'\n";
+	print "sending '$send_string' to '$target'\n" if $obj->{debug};
 	$obj->sendkeys("'$send_string' C-m");
 }
 
