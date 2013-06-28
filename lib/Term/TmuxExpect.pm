@@ -99,7 +99,7 @@ sub read_all {
 		my @lines;
 		until ($got_something) {
 			$start_line -= 10; # go further back
-			print "start_line=$start_line\n" if $obj->{debug};
+			print "start_line=$start_line\n" if $obj->{debug} > 10;
 			$cmd = "tmux capture-pane -t '$target' -S $start_line ; tmux save-buffer -";
 			my $out = `$cmd`;
 			my $chars = length($out);
