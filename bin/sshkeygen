@@ -6,6 +6,7 @@ use diagnostics;
 use lib '/home/chicks/Documents/git/libtmux/lib'; # TODO: remove hack
 use Term::TmuxExpect;
 use Time::HiRes qw(gettimeofday tv_interval usleep sleep);
+use MIME::Base64;
 
 # slurp password out of unversioned file
 my $password = `cat ~/.creds`;
@@ -17,12 +18,15 @@ foreach my $target (@servers) {
 	print "$target:\n";
 	my $server = $target;
 	$target =~ s/[.]/_/g;
+
+	my $server_pattern = $server;
+	$server_pattern =~ s/^init[.]/init[1-9]./;
 	
 	# Spawn tmux window
 	my $random = int(rand(1000));
 	my $window_name = "${target}_${random}";
 	system("tmux new-window -d -n $window_name");
-	sleep 1; # TODO: sleep less?
+	sleep(0.5);
 
 	my $remote = new Term::TmuxExpect($window_name);
 
@@ -32,19 +36,15 @@ foreach my $target (@servers) {
 	$remote->sendln("ssh $server");
 	$remote->timeout('20s'); # remote servers can be very slow
 
-	$remote->expect_last('^chicks'); # at a prompt
-
 	my $sent_password = 0;
 
 	# get to the shell!
 	while (1) {
 		my @lines = $remote->read_all(3);
 		my $last = pop @lines;
-		print "got <<$last>>\n";
+		print "got <<$last>>\n" if $remote->{debug};
 
 		# at a prompt on the remote server
-		my $server_pattern = $server;
-		$server_pattern =~ s/^init[.]/init[1-9]./;
 		if ( $last =~ /^chicks[\@]$server_pattern.*[\$]$/ ) {
 			# we are ready to go on
 			last;
@@ -71,19 +71,74 @@ foreach my $target (@servers) {
 		$remote->sendln('mkdir .ssh; chmod 700 .ssh; cd .ssh;  wget https://raw.github.com/chicks-net/chicks-home/master/.ssh/authorized_keys; chmod 600 authorized_keys; ls -al; cd ..');
 	}
 
-#	$remote->{debug} = 1; # get more logging output
 	# keygen
-	# TODO: implement
+	$remote->sendln('ssh-keygen -t rsa -b 4096 -N "" -f .ssh/id_rsa');
+	sleep(0.1);
+	$remote->timeout('5s');
+	$remote->expect_last ( '^chicks[\@]'.$server_pattern.'.*[$]$' ) or die; # at a prompt
 
 	# retrieve public key
-	# TODO: implement
+	$remote->sendln('cat .ssh/id_rsa.pub');
+#	$remote->{debug} = 1; # get more logging output
+	while (1) {
+		my @lines = $remote->read_all(9);
 
-	# logout of ssh box
-	$remote->sendln('exit');
-	sleep 1;
-	# close tmux window
-	$remote->sendln('exit');
-	sleep 1;
+		my $key_cume = '';
+		foreach my $line (@lines) {
+			chomp($line);
+			if ($line =~ /^ssh-rsa /) {
+				die "not starting again" if length $key_cume;
+				$key_cume = $line;
+				print "starting";
+				next;
+			}
+			if (length $key_cume) {
+				# already accumulating
+				$key_cume .= $line;
+				if ($line =~ / chicks[@]$server_pattern/) {
+					last;
+				}
+			}
+			# otherwise keep looking
+		}
+
+		if (length $key_cume) {
+			my $out_file = '/tmp/auth_keys.txt';
+			my $out_dir = '/tmp/';
+
+			my ($raw_server_name) = ($key_cume =~ /[@](.*)/);
+			print "raw_server = $raw_server_name";
+			my $obfu_server_name = encode_base64($raw_server_name);
+			$key_cume =~ s/$raw_server_name/$obfu_server_name/;
+
+			# append key to $out_file
+			my $fh;
+			open( $fh, ">>", $out_file ) or die "could not open $out_file: $!";
+			print $fh $key_cume, "\n";
+			close($fh) or die "could not close $out_file: $!";
+
+			# git commit
+			chdir($out_dir) or die "could not chdir($out_dir): $!";
+			system("git add $out_file");
+			#system("git commit -m 'adding ssh key for $obfu_server_name');
+
+			last;
+		}
+		# breath
+		sleep(0.1);
+	}
+
+	unless ($remote->{debug}) {
+		# logout of ssh box
+		$remote->sendln('exit');
+		sleep 1;
+
+		# close tmux window
+		$remote->sendln('exit');
+		sleep 1;
+	} else {
+		print "clean up the tmux panepane yourself\n";
+	}
 }
 
-
+__END__
