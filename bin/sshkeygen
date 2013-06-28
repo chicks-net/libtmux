@@ -5,6 +5,7 @@ use warnings;
 use diagnostics;
 use lib '/home/chicks/Documents/git/libtmux/lib'; # TODO: remove hack
 use Term::TmuxExpect;
+use Time::HiRes qw(gettimeofday tv_interval usleep sleep);
 
 # slurp password out of unversioned file
 my $password = `cat ~/.creds`;
@@ -17,7 +18,7 @@ foreach my $target (@servers) {
 	my $server = $target;
 	$target =~ s/[.]/_/g;
 	
-	# Spawn window
+	# Spawn tmux window
 	my $random = int(rand(1000));
 	my $window_name = "${target}_${random}";
 	system("tmux new-window -d -n $window_name");
@@ -27,27 +28,60 @@ foreach my $target (@servers) {
 
 #	$remote->expect_last('^chicks.*[$]$'); # at a prompt
 
-	# login
+	# connect to remote server
 	$remote->sendln("ssh $server");
-	sleep 1;
-	
-	#$remote->timeout('20s');
+	$remote->timeout('20s'); # remote servers can be very slow
+
 	$remote->expect_last('^chicks'); # at a prompt
-#	$remote->expect_last("^chicks[\@]$server.*[\$]\$"); # at a prompt on the remote server
-	# TODO: check if ssh is prompting
-#        $remote->sendln('yes'); # for ssh host key,
-	sleep 1;
-#        $remote->sendln($password);
-	sleep 1;
 
-	# do something
-#	$remote->sendln('mkdir .ssh; chmod 700 .ssh; cd .ssh;  wget https://raw.github.com/chicks-net/chicks-home/master/.ssh/authorized_keys; chmod 600 authorized_keys; ls -al; cd ..');
+	my $sent_password = 0;
 
-	$remote->{debug} = 1; # get more logging output
+	# get to the shell!
+	while (1) {
+		my @lines = $remote->read_all(3);
+		my $last = pop @lines;
+		print "got <<$last>>\n";
 
-	# logout
+		# at a prompt on the remote server
+		my $server_pattern = $server;
+		$server_pattern =~ s/^init[.]/init[1-9]./;
+		if ( $last =~ /^chicks[\@]$server_pattern.*[\$]$/ ) {
+			# we are ready to go on
+			last;
+		}
+
+		# look for ssh key prompt
+		if ( $last =~ /^Are you sure you want to continue connecting [(]yes[\/]no[)][?]/ ) {
+			$remote->sendln('yes');
+		}
+
+		# look for password prompt
+		if ( $last =~ /^chicks[@].*password:/ ) {
+			$sent_password++;
+			$remote->sendln($password);
+		}
+
+		# breath
+		sleep(0.1);
+	}
+
+
+	if ($sent_password) {
+		# pull down authorized_keys
+		$remote->sendln('mkdir .ssh; chmod 700 .ssh; cd .ssh;  wget https://raw.github.com/chicks-net/chicks-home/master/.ssh/authorized_keys; chmod 600 authorized_keys; ls -al; cd ..');
+	}
+
+#	$remote->{debug} = 1; # get more logging output
+	# keygen
+	# TODO: implement
+
+	# retrieve public key
+	# TODO: implement
+
+	# logout of ssh box
 	$remote->sendln('exit');
 	sleep 1;
+	# close tmux window
 	$remote->sendln('exit');
 	sleep 1;
 }
