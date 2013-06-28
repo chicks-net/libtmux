@@ -327,7 +327,13 @@ Get the next to last line -- as in 'previous' -- in the pane.
 
 =over 4
 
-=item * write some tests
+=item * move tab creatoin code into library
+
+=item * write check to make sure target pane exists
+
+=item * move ssh code into library
+
+=item * check return values from tmux invocations
 
 =item * write some tests
 
