@@ -105,11 +105,22 @@ foreach my $target (@servers) {
 		if (length $key_cume) {
 			my $out_file = '/home/chicks/Documents/git/chicks-home/.ssh/authorized_keys';
 			my $out_dir = '/home/chicks/Documents/git/chicks-home/.ssh/';
+			my $log_file = $out_dir . 'genkey.log';
 
+			# append key to $out_file
+			my $log_fh;
+			open( $log_fh, ">>", $log_file ) or die "could not open $log_file: $!";
+			print $log_fh "# ", `date`;
+			print $log_fh $key_cume, "\n";
+
+			# obfuscate
 			my ($raw_server_name) = ($key_cume =~ /[@](.*)/);
 			print "raw_server = $raw_server_name";
 			my $obfu_server_name = encode_base64($raw_server_name);
 			$key_cume =~ s/$raw_server_name/$obfu_server_name/;
+
+			print $log_fh $key_cume, "\n"; # log
+			close($log_fh) or die "could not close $log_file: $!";
 
 			# append key to $out_file
 			my $fh;
