@@ -269,7 +269,9 @@ Term::TmuxExpect - expect for tmux
 
    $boo->sendln('echo test from the actual script');
    $boo->expect_prev('test from the actual script$') or die "no echo";
+   $boo->{debug} = 1;        # cut debugging on
    $boo->expect_last('^chicks') or die "no chicks";
+   $boo->{debug} = 0;        # cut debugging off
 
 
 =head1 DESCRIPTION
