@@ -16,14 +16,14 @@ BEGIN {
     @EXPORT_OK = ();
 }
 
-BEGIN {
-	if (multiplexed) {
-		print "FYI: Using " . multiplexer . " as terminal multiplexer ";
-		print "and currently " . (attached() ? '' : "not ") . "attached.\n";
-	} else {
-		print "not multiplexed, this module won't do you much good outside fo tmux\n";
-	}
-}
+#BEGIN {
+#	if (multiplexed) {
+#		print "FYI: Using " . multiplexer . " as terminal multiplexer ";
+#		print "and currently " . (attached() ? '' : "not ") . "attached.\n";
+#	} else {
+#		print "not multiplexed, this module won't do you much good outside fo tmux\n";
+#	}
+#}
 
 sub new {
 	my $class = shift;
