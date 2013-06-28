@@ -37,12 +37,12 @@ sub new {
 
 	bless $self, $class;
 
-	print "Target is $self->{_target} ";
+	print "Target is $self->{_target} " if $self->{debug};
 	if ($self->{_create}) {
 		print "with CREATE\n";
 		die "unimplemented: create tab";
 	} else {
-		print "which should already exist\n";
+		print "which should already exist\n" if $self->{debug};
 		$self->sendln("# tmux_expect A probe");
 		$self->sendln("# tmux_expect B probe");
 		usleep(50);
@@ -54,7 +54,7 @@ sub new {
 	# get line count
 	$self->sendln("tput lines");
 	$self->timeout('3s');
-	print "sleeping 1s to let the shell catch up\n";
+	print "sleeping 1s to let the shell catch up\n" if $self->{debug};
 	sleep(1);
 	die "not at a propmt" unless $self->expect_last('[$#]$');
 	my $row_count = $self->read_prev();
@@ -188,7 +188,7 @@ sub expect_prev {
 #		print "$time_running\n";
 	}
 	if ($success) {
-		print "matched '$match' in expect_last() with $tries tries after ". format_seconds($time_running) . "s\n";
+		print "matched '$match' in expect_last() with $tries tries after ". format_seconds($time_running) . "s\n" if $obj->{debug};
 		return 1;
 	}
 	unless ($success) {
@@ -220,7 +220,7 @@ sub expect_last {
 #		print "$time_running\n";
 	}
 	if ($success) {
-		print "matched '$match' in expect_last() with $tries tries after ". format_seconds($time_running) . "s\n";
+		print "matched '$match' in expect_last() with $tries tries after ". format_seconds($time_running) . "s\n" if $obj->{debug};
 		return 1;
 	}
 	unless ($success) {
