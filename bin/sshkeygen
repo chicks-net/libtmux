@@ -65,6 +65,7 @@ foreach my $target (@servers) {
 		sleep(0.1);
 	}
 
+	print "\t* logged in (sent_password=$sent_password)\n";
 
 	if ($sent_password) {
 		# pull down authorized_keys
@@ -76,6 +77,7 @@ foreach my $target (@servers) {
 	sleep(0.1);
 	$remote->timeout('5s');
 	$remote->expect_last ( '^chicks[\@]'.$server_pattern.'.*[$]$' ) or die; # at a prompt
+	print "\t* key generated\n";
 
 	# retrieve public key
 	$remote->sendln('cat .ssh/id_rsa.pub');
@@ -89,7 +91,6 @@ foreach my $target (@servers) {
 			if ($line =~ /^ssh-rsa /) {
 				die "not starting again" if length $key_cume;
 				$key_cume = $line;
-				print "starting";
 				next;
 			}
 			if (length $key_cume) {
@@ -115,7 +116,6 @@ foreach my $target (@servers) {
 
 			# obfuscate
 			my ($raw_server_name) = ($key_cume =~ /[@](.*)/);
-			print "raw_server = $raw_server_name";
 			my $obfu_server_name = encode_base64($raw_server_name);
 			$key_cume =~ s/$raw_server_name/$obfu_server_name/;
 
@@ -138,6 +138,7 @@ foreach my $target (@servers) {
 		# breath
 		sleep(0.1);
 	}
+	print "\t* key retrieved\n";
 
 	unless ($remote->{debug}) {
 		# logout of ssh box
