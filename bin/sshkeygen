@@ -23,9 +23,11 @@ foreach my $target (@servers) {
 	$server_pattern =~ s/^init[.]/init[1-9]./;
 	
 	# Spawn tmux window
+	# TODO: move into library
 	my $random = int(rand(1000));
 	my $window_name = "${target}_${random}";
-	system("tmux new-window -d -n $window_name");
+	#system("tmux new-window -d -n $window_name");
+	system("tmux new-window -n $window_name");
 	sleep(0.5);
 
 	my $remote = new Term::TmuxExpect($window_name);
