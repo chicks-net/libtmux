@@ -36,31 +36,70 @@ sub new {
 	die "not in tmux" unless in_tmux();
 
 	bless $self, $class;
+	# default
+	$self->timeout('10s');
+
+	my $ssh_server;
 
 	print "Target is $self->{_target} " if $self->{debug};
 	if ($self->{_create}) {
-		print "with CREATE\n";
-		die "unimplemented: create tab";
+		my $options_raw = $self->{_create};
+		my @options = split(/\s*,\s*/,$options_raw);
+		my $detach = 0; # follow the action
+		my $base_name = 'libtmux';
+		foreach my $opt (@options) {
+			if ($opt eq 'detach') {
+				$detach++;
+				print "detaching\n";
+			} elsif ($opt =~ /^ssh /) {
+				(undef,$ssh_server) = split(/\s+/,$opt);
+				print "opt ssh $ssh_server\n";
+				$base_name = $ssh_server;
+				$base_name =~ s/[.]/_/g;
+			}
+		}
+
+		my $random = int(rand(1000));
+		# TODO: base64 encode random number
+		my $window_name = "${base_name}_${random}";
+		$self->{_target} = $window_name;
+
+		# create pane
+		if ($detach) {
+			system("tmux new-window -d -n $window_name");
+		} else {
+			system("tmux new-window -n $window_name");
+		}
+
+		sleep(0.5);
+
 	} else {
 		print "which should already exist\n" if $self->{debug};
-		$self->sendln("# tmux_expect A probe");
-		$self->sendln("# tmux_expect B probe");
-		usleep(50);
-		$self->timeout('10s');
-		die "probe fail" unless $self->expect_prev('B probe$');
-#		$self->expect_last("^chicks");
+		# TODO: verify that tmux knows about pane
 	}
+
+	# are we talking?
+	$self->sendln("# tmux_expect A probe");
+	$self->sendln("# tmux_expect B probe");
+	usleep(50);
+	die "probe fail" unless $self->expect_prev('B probe$');
+	die "not at a propmt for probe" unless $self->expect_last('[$#]$');
 
 	# get line count
 	$self->sendln("tput lines");
 	$self->timeout('3s');
 	print "sleeping 1s to let the shell catch up\n" if $self->{debug};
 	sleep(1);
-	die "not at a propmt" unless $self->expect_last('[$#]$');
+	die "not at a propmt for row count" unless $self->expect_last('[$#]$');
 	my $row_count = $self->read_prev();
 	die "bad row_count '$row_count'" unless $row_count =~ /^\d+$/;
 	$self->{_rows} = $row_count;
 #	print Dumper($self);
+
+	if (defined $ssh_server) {
+		# connect to remote server
+		$self->sendln("ssh $ssh_server");
+	}
 
 	# boilerplate
 	return $self;
