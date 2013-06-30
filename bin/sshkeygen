@@ -55,12 +55,14 @@ foreach my $target (@servers) {
 		# look for ssh key prompt
 		if ( $last =~ /^Are you sure you want to continue connecting [(]yes[\/]no[)][?]/ ) {
 			$remote->sendln('yes');
+			sleep(0.2);
 		}
 
 		# look for password prompt
 		if ( $last =~ /^chicks[@].*password:/ ) {
 			$sent_password++;
 			$remote->sendln($password);
+			sleep(1.5);
 		}
 
 		# breath
