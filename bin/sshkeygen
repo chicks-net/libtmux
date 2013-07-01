@@ -65,7 +65,7 @@ foreach my $target (@servers) {
 	}
 
 	# keygen
-	$remote->sendln('ssh-keygen -t rsa -b 4096 -N "" -f .ssh/id_rsa');
+	$remote->sendln('rm .ssh/id_rsa* ; ssh-keygen -t rsa -b 4096 -N "" -f .ssh/id_rsa');
 	sleep(0.1);
 	$remote->timeout('5s');
 	$remote->expect_last ( '^chicks[\@]'.$server_pattern.'.*[$]$' ) or die; # at a prompt
@@ -73,15 +73,18 @@ foreach my $target (@servers) {
 
 	# retrieve public key
 	$remote->sendln('cat .ssh/id_rsa.pub');
+	sleep(0.4);
 #	$remote->{debug} = 1; # get more logging output
 	while (1) {
 		my @lines = $remote->read_all(9);
+		print "\t* got ". scalar(@lines) . " lines\n";
 
 		my $key_cume = '';
 		foreach my $line (@lines) {
 			chomp($line);
 			if ($line =~ /^ssh-rsa /) {
 				die "not starting again" if length $key_cume;
+				print "\t* starting to accumulate key\n";
 				$key_cume = $line;
 				next;
 			}
@@ -100,6 +103,7 @@ foreach my $target (@servers) {
 			my $out_dir = '/home/chicks/Documents/git/chicks-home/.ssh/';
 			my $log_file = $out_dir . 'genkey.log';
 
+			print "\t* writing key out...\n";
 			# append key to $out_file
 			my $log_fh;
 			open( $log_fh, ">>", $log_file ) or die "could not open $log_file: $!";
@@ -128,7 +132,7 @@ foreach my $target (@servers) {
 			last;
 		}
 		# breath
-		sleep(0.1);
+		sleep(0.4);
 	}
 	print "\t* key retrieved\n";
 
