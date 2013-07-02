@@ -50,10 +50,10 @@ sub new {
 		foreach my $opt (@options) {
 			if ($opt eq 'detach') {
 				$detach++;
-				print "detaching\n";
+#				print "detaching\n";
 			} elsif ($opt =~ /^ssh /) {
 				(undef,$ssh_server) = split(/\s+/,$opt);
-				print "opt ssh $ssh_server\n";
+#				print "opt ssh $ssh_server\n";
 				$base_name = $ssh_server;
 				$base_name =~ s/[.]/_/g;
 			}
