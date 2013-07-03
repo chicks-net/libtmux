@@ -96,6 +96,7 @@ foreach my $target (@servers) {
 				}
 			}
 			# otherwise keep looking
+			print "still looking with $line\n";
 		}
 
 		if (length $key_cume) {
