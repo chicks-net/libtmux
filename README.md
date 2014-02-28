@@ -74,7 +74,7 @@ Get the next to last line -- as in 'previous' -- in the pane.
 
 # SEE ALSO
 
-Manpages: screen(1) tmux(1) expect(1)
+Man pages: <screen(1)> <tmux(1)> <expect(1)> <Net::Telnet(3pm)>
 
 # AUTHOR
 
