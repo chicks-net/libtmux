@@ -3,17 +3,17 @@ package Term::TmuxExpect;
 use strict;
 use warnings;
 use Term::Multiplexed qw(multiplexed attached multiplexer);
-use Data::Dumper; # just for debugging
+use Data::Dumper;    # just for debugging
 use Time::HiRes qw(gettimeofday tv_interval usleep);
 
 use vars qw($VERSION @EXPORT @EXPORT_OK @ISA);
 $VERSION = "0.3";
 
 BEGIN {
-    require Exporter;
-    @ISA = qw(Exporter);
-    @EXPORT = ();
-    @EXPORT_OK = ();
+	require Exporter;
+	@ISA       = qw(Exporter);
+	@EXPORT    = ();
+	@EXPORT_OK = ();
 }
 
 #BEGIN {
@@ -27,39 +27,43 @@ BEGIN {
 
 sub new {
 	my $class = shift;
-	my $self = {
-		_target		=> shift,
-		_create		=> shift || 0,
-		debug		=> 0,
+	my $self  = {
+		_target => shift,
+		_create => shift || 0,
+		debug   => 0,
 	};
 
 	die "not in tmux" unless in_tmux();
 
 	bless $self, $class;
+
 	# default
 	$self->timeout('10s');
 
 	my $ssh_server;
 
 	print "Target is $self->{_target} " if $self->{debug};
-	if ($self->{_create}) {
+	if ( $self->{_create} ) {
 		my $options_raw = $self->{_create};
-		my @options = split(/\s*,\s*/,$options_raw);
-		my $detach = 0; # follow the action
-		my $base_name = 'libtmux';
+		my @options     = split( /\s*,\s*/, $options_raw );
+		my $detach      = 0;                                  # follow the action
+		my $base_name   = 'libtmux';
 		foreach my $opt (@options) {
-			if ($opt eq 'detach') {
+			if ( $opt eq 'detach' ) {
 				$detach++;
-#				print "detaching\n";
-			} elsif ($opt =~ /^ssh /) {
-				(undef,$ssh_server) = split(/\s+/,$opt);
-#				print "opt ssh $ssh_server\n";
+
+				#				print "detaching\n";
+			} elsif ( $opt =~ /^ssh / ) {
+				( undef, $ssh_server ) = split( /\s+/, $opt );
+
+				#				print "opt ssh $ssh_server\n";
 				$base_name = $ssh_server;
 				$base_name =~ s/[.]/_/g;
 			}
 		}
 
-		my $random = int(rand(1000));
+		my $random = int( rand(1000) );
+
 		# TODO: base64 encode random number
 		my $window_name = "${base_name}_${random}";
 		$self->{_target} = $window_name;
@@ -75,6 +79,7 @@ sub new {
 
 	} else {
 		print "which should already exist\n" if $self->{debug};
+
 		# TODO: verify that tmux knows about pane
 	}
 
@@ -82,7 +87,7 @@ sub new {
 	$self->sendln("# tmux_expect A probe");
 	$self->sendln("# tmux_expect B probe");
 	usleep(50);
-	die "probe fail" unless $self->expect_prev('B probe$');
+	die "probe fail"                unless $self->expect_prev('B probe$');
 	die "not at a propmt for probe" unless $self->expect_last('[$#]$');
 
 	# get line count
@@ -94,9 +99,11 @@ sub new {
 	my $row_count = $self->read_prev();
 	die "bad row_count '$row_count'" unless $row_count =~ /^\d+$/;
 	$self->{_rows} = $row_count;
-#	print Dumper($self);
 
-	if (defined $ssh_server) {
+	#	print Dumper($self);
+
+	if ( defined $ssh_server ) {
+
 		# connect to remote server
 		$self->sendln("ssh $ssh_server");
 	}
@@ -109,9 +116,10 @@ sub read_prev {
 	my ($obj) = @_;
 	die "not a ref" unless ref $obj;
 	my @lines = $obj->read_all(2);
-	my $last = pop @lines;
-	my $prev = pop @lines;
-#	print "returning $prev\n";
+	my $last  = pop @lines;
+	my $prev  = pop @lines;
+
+	#	print "returning $prev\n";
 	return $prev;
 }
 
@@ -119,61 +127,66 @@ sub read_last {
 	my ($obj) = @_;
 	die "not a ref" unless ref $obj;
 	my @lines = $obj->read_all(1);
-	my $last = pop @lines;
-#	print "returning $last\n";
+	my $last  = pop @lines;
+
+	#	print "returning $last\n";
 	return $last;
 }
 
 sub read_all {
-	my ($obj,$lines_desired) = @_;
+	my ( $obj, $lines_desired ) = @_;
 	die "not a ref" unless ref $obj;
-	my $target = $obj->{_target};
+	my $target      = $obj->{_target};
 	my $actual_rows = $obj->{_rows};
 
-	usleep(100); # give things a chance to catch up
+	usleep(100);    # give things a chance to catch up
 	my $cmd = "tmux capture-pane -t '$target' ; tmux save-buffer -";
-	if (defined $lines_desired and defined $actual_rows) {
+	if ( defined $lines_desired and defined $actual_rows ) {
 		my $got_something = 0;
-		my $start_line = $actual_rows - $lines_desired;
+		my $start_line    = $actual_rows - $lines_desired;
 		my @lines;
 		until ($got_something) {
-			$start_line -= 10; # go further back
+			$start_line -= 10;    # go further back
 			print "start_line=$start_line\n" if $obj->{debug} > 10;
 			$cmd = "tmux capture-pane -t '$target' -S $start_line ; tmux save-buffer -";
-			my $out = `$cmd`;
+			my $out   = `$cmd`;
 			my $chars = length($out);
-#			print "got $chars from $cmd\n";
-			@lines = split(/\n/,$out);
+
+			#			print "got $chars from $cmd\n";
+			@lines = split( /\n/, $out );
 
 			$got_something = grep { length($_) } @lines;
-#			print "exiting loop with got_something=$got_something\n";
+
+			#			print "exiting loop with got_something=$got_something\n";
 		}
 		print "returning " . scalar @lines . " lines\n" if $obj->{debug};
 		return @lines;
 	} else {
+
 		# really all
 		print "running $cmd\n" if $obj->{debug};
-		my $out = `$cmd`;
+		my $out   = `$cmd`;
 		my $chars = length($out);
-#		print "got $chars from $cmd\n";
-		my @lines = split(/\n/,$out);
+
+		#		print "got $chars from $cmd\n";
+		my @lines = split( /\n/, $out );
 		print "returning " . scalar @lines . " lines\n" if $obj->{debug};
 		return @lines;
 	}
 }
 
 sub timeout {
-	my ($obj,$timeout) = @_;
+	my ( $obj, $timeout ) = @_;
 	die "not a ref" unless ref $obj;
 	die "bad timeout '$timeout'" unless $timeout =~ /^(\d+)(s|ms|us)$/;
-	my $size = $1;
-	my $units = $2;
-	my $seconds = 1; # default timeout!
-	if ($units eq 's') {
+	my $size    = $1;
+	my $units   = $2;
+	my $seconds = 1;    # default timeout!
+	if ( $units eq 's' ) {
 		$seconds = $size;
-	} elsif ($units eq 'ms') {
+	} elsif ( $units eq 'ms' ) {
 		$seconds = $size / 1000;
-	} elsif ($units eq 'us') {
+	} elsif ( $units eq 'us' ) {
 		$seconds = $size / 1000 / 1000;
 	} else {
 		die "units '$units' unrecognized";
@@ -184,21 +197,22 @@ sub timeout {
 }
 
 sub sendkeys {
-	my ($obj,@send_strings) = @_;
+	my ( $obj, @send_strings ) = @_;
 	die "not a ref" unless ref $obj;
 	my $target = $obj->{_target};
-	die "not in tmux" unless in_tmux();
-	die "no target" unless length $target;
+	die "not in tmux"     unless in_tmux();
+	die "no target"       unless length $target;
 	die "nothing to send" unless scalar @send_strings;
 
-	my $send_string = join (" ",@send_strings);
+	my $send_string = join( " ", @send_strings );
 	my $cmd = "tmux send-keys -t '$target' $send_string";
-#	print "running $cmd\n" if $obj->{debug};
+
+	#	print "running $cmd\n" if $obj->{debug};
 	system($cmd);
 }
 
 sub sendln {
-	my ($obj,$send_string) = @_;
+	my ( $obj, $send_string ) = @_;
 	die "not a ref" unless ref $obj;
 	my $target = $obj->{_target};
 	print "sending '$send_string' to '$target'\n" if $obj->{debug};
@@ -211,27 +225,31 @@ sub expect_prev {
 	my $match = shift;
 	my $timeout = shift || $obj->{_timeout};
 
-	my $start = [gettimeofday()];
-	my $success = 0;
-	my $tries = 0;
-	my $time_running = tv_interval ( $start, [gettimeofday] );
-	while ($time_running < $timeout) {
+	my $start        = [ gettimeofday() ];
+	my $success      = 0;
+	my $tries        = 0;
+	my $time_running = tv_interval( $start, [gettimeofday] );
+	while ( $time_running < $timeout ) {
 		$tries++;
 		my $last_line = $obj->read_prev();
 		die unless defined $last_line;
-		if ($last_line =~ /$match/) {
+		if ( $last_line =~ /$match/ ) {
 			$success = 1;
 			last;
 		}
-		$time_running = tv_interval ( $start, [gettimeofday] );
-#		print "$time_running\n";
+		$time_running = tv_interval( $start, [gettimeofday] );
+
+		#		print "$time_running\n";
 	}
 	if ($success) {
-		print "matched '$match' in expect_last() with $tries tries after ". format_seconds($time_running) . "s\n" if $obj->{debug};
+		print "matched '$match' in expect_last() with $tries tries after "
+		  . format_seconds($time_running) . "s\n"
+		  if $obj->{debug};
 		return 1;
 	}
 	unless ($success) {
-		print "NO match for '$match' in expect_last() with $tries tries after ". format_seconds($time_running) . "s\n";
+		print "NO match for '$match' in expect_last() with $tries tries after "
+		  . format_seconds($time_running) . "s\n";
 		return 0;
 	}
 	die "never";
@@ -243,28 +261,32 @@ sub expect_last {
 	my $match = shift;
 	my $timeout = shift || $obj->{_timeout};
 
-	my $start = [gettimeofday()];
-	my $success = 0;
-	my $tries = 0;
-	my $time_running = tv_interval ( $start, [gettimeofday] );
-	while ($time_running < $timeout) {
+	my $start        = [ gettimeofday() ];
+	my $success      = 0;
+	my $tries        = 0;
+	my $time_running = tv_interval( $start, [gettimeofday] );
+	while ( $time_running < $timeout ) {
 		$tries++;
 		my $last_line = $obj->read_last();
 		die unless defined $last_line;
-		if ($last_line =~ /$match/) {
+		if ( $last_line =~ /$match/ ) {
 			$success = 1;
 			last;
 		}
-		$time_running = tv_interval ( $start, [gettimeofday] );
-#		print "$time_running\n";
+		$time_running = tv_interval( $start, [gettimeofday] );
+
+		#		print "$time_running\n";
 	}
 	if ($success) {
-		print "matched '$match' in expect_last() with $tries tries after ". format_seconds($time_running) . "s\n" if $obj->{debug};
+		print "matched '$match' in expect_last() with $tries tries after "
+		  . format_seconds($time_running) . "s\n"
+		  if $obj->{debug};
 		return 1;
 	}
 	unless ($success) {
-		print "NO match for '$match' in expect_last() with $tries tries after ". format_seconds($time_running) . "s\n";
-		print join("\n",$obj->read_all(3));
+		print "NO match for '$match' in expect_last() with $tries tries after "
+		  . format_seconds($time_running) . "s\n";
+		print join( "\n", $obj->read_all(3) );
 		print "\n\n";
 		return 0;
 	}
@@ -272,9 +294,9 @@ sub expect_last {
 }
 
 sub expect {
-	my ($obj,$match,$timeout) = @_;
+	my ( $obj, $match, $timeout ) = @_;
 	die "not a ref" unless ref $obj;
-	die "unimplemented expect()"; # TODO: implement something
+	die "unimplemented expect()";    # TODO: implement something
 }
 
 #
@@ -283,7 +305,7 @@ sub expect {
 
 sub format_seconds {
 	my ($raw_seconds) = @_;
-	return sprintf("%.8f",$raw_seconds);
+	return sprintf( "%.8f", $raw_seconds );
 }
 
 sub in_tmux {
