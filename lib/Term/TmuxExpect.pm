@@ -402,7 +402,7 @@ Get the next to last line -- as in 'previous' -- in the pane.
 
 =head1 SEE ALSO
 
-Manpages: screen(1) tmux(1) expect(1)
+Manpages: screen(1) tmux(1) expect(1) L<Net::Telnet>
 
 =head1 AUTHOR
 
