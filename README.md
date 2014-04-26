@@ -69,8 +69,8 @@ Get the next to last line -- as in 'previous' -- in the pane.
 
 # TODO
 
-- write some tests
-- write some tests
+* refactor constructor to avoid new(undef,"foo") crap
+* write some tests
 
 # SEE ALSO
 
